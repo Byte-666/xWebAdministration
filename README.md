@@ -2,7 +2,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/gnsxkjxht31ctan1/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xwebadministration/branch/master)
 
-The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings** and **xWebConfigKeyValue** DSC resources for creating and configuring various IIS artifacts.
+The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **IISRemoteManagement**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings** and **xWebConfigKeyValue** DSC resources for creating and configuring various IIS artifacts.
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
@@ -38,6 +38,11 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **LogTruncateSize**: How large the file should be before it is truncated. If this is set then LogPeriod will be ignored if passed in and set to MaxSize. The value must be a valid integer between `1048576 (1MB)` and `4294967295 (4GB)`.
 * **LoglocalTimeRollover**: Use the localtime for file naming and rollover. The acceptable values for this property are: `$true`, `$false`
 * **LogFormat**: Format of the Logfiles. **Note**Only W3C supports LogFlags. The acceptable values for this property are: `IIS`,`W3C`,`NCSA`
+
+### xIISRemoteManagement
+* **Ensure**: Ensure that RemoteManagement service is installed. The acceptable values for this property are: `Present`,`Absent`
+* **Status**: Ensure that RemoteManagement is started. The acceptable values for this property are: `Started`, `Stopped`
+* **WindowsCredential**: Whether IIS RemoteManagement is enabled for Windows Credentials only or Windows andIIS Credentials. The acceptable values for this property are: `$true` or `$false` where `$true` is Windows only and `$false` is Windows and IIS.
 
 ### xWebAppPool
 
@@ -281,6 +286,7 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * Added a stubs file for the WebAdministration functions so that the unit tests do not require a server to run
 * Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 * Updated appveyor.yml to use the default image.
+* Added xIISRemoteManagement resource.
 
 ### 1.12.0.0
 
