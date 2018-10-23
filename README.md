@@ -1,6 +1,12 @@
 # xWebAdministration
 
+<<<<<<< HEAD
 The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings**, **xWebConfigKeyValue**, **xWebConfigProperty**, **xWebConfigPropertyCollection** and **WebApplicationHandler** DSC resources for creating and configuring various IIS artifacts.
+=======
+[![Build status](https://ci.appveyor.com/api/projects/status/gnsxkjxht31ctan1/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xwebadministration/branch/master)
+
+The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **IISRemoteManagement**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings** and **xWebConfigKeyValue** DSC resources for creating and configuring various IIS artifacts.
+>>>>>>> fe9eb75fcf3497a3b761e1a45b5defe848c6747c
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
@@ -62,6 +68,11 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
   * **LogFieldName**: Field name to identify the custom field within the log file. Please note that the field name cannot contain spaces.
   * **SourceName**: You can select `RequestHeader`, `ResponseHeader`, or `ServerVariable` (note that enhanced logging cannot log a server variable with a name that contains lower-case characters - to include a server variable in the event log just make sure that its name consists of all upper-case characters).
   * **SourceType**: Name of the HTTP header or server variable (depending on the Source Type you selected) that contains a value that you want to log.
+
+### xIISRemoteManagement
+* **Ensure**: Ensure that RemoteManagement service is installed. The acceptable values for this property are: `Present`,`Absent`
+* **Status**: Ensure that RemoteManagement is started. The acceptable values for this property are: `Started`, `Stopped`
+* **WindowsCredential**: Whether IIS RemoteManagement is enabled for Windows Credentials only or Windows andIIS Credentials. The acceptable values for this property are: `$true` or `$false` where `$true` is Windows only and `$false` is Windows and IIS.
 
 ### xWebAppPool
 
@@ -414,6 +425,7 @@ This resource manages the IIS configuration section locking (overrideMode) to co
 * Added a stubs file for the WebAdministration functions so that the unit tests do not require a server to run
 * Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 * Updated appveyor.yml to use the default image.
+* Added xIISRemoteManagement resource.
 
 ### 1.12.0.0
 
