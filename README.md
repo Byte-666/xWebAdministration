@@ -1,12 +1,6 @@
 # xWebAdministration
 
-<<<<<<< HEAD
-The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings**, **xWebConfigKeyValue**, **xWebConfigProperty**, **xWebConfigPropertyCollection** and **WebApplicationHandler** DSC resources for creating and configuring various IIS artifacts.
-=======
-[![Build status](https://ci.appveyor.com/api/projects/status/gnsxkjxht31ctan1/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xwebadministration/branch/master)
-
 The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **IISRemoteManagement**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings** and **xWebConfigKeyValue** DSC resources for creating and configuring various IIS artifacts.
->>>>>>> fe9eb75fcf3497a3b761e1a45b5defe848c6747c
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
