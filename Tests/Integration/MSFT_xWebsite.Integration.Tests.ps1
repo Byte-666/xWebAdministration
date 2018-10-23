@@ -110,16 +110,27 @@ try
             $result.bindings.Collection.BindingInformation[0]   | Should Match $dscConfig.AllNodes.HTTP1Hostname
             $result.bindings.Collection.BindingInformation[1]   | Should Match $dscConfig.AllNodes.HTTP2Hostname
             $result.bindings.Collection.BindingInformation[2]   | Should Match $dscConfig.AllNodes.HTTPSHostname
+            $result.bindings.Collection.BindingInformation[3]   | Should Match $dscConfig.AllNodes.HTTPSHostname
             $result.bindings.Collection.BindingInformation[0]   | Should Match $dscConfig.AllNodes.HTTPPort
             $result.bindings.Collection.BindingInformation[1]   | Should Match $dscConfig.AllNodes.HTTPPort
             $result.bindings.Collection.BindingInformation[2]   | Should Match $dscConfig.AllNodes.HTTPSPort
             $result.bindings.Collection.certificateHash[2]      | Should Be $selfSignedCert.Thumbprint
             $result.bindings.Collection.certificateStoreName[2] | Should Be $dscConfig.AllNodes.CertificateStoreName
-            
+            $result.bindings.Collection.BindingInformation[3]   | Should Match $dscConfig.AllNodes.HTTPSPort2
+            $result.bindings.Collection.certificateHash[3]      | Should Be $selfSignedCert.Thumbprint
+            $result.bindings.Collection.certificateStoreName[3] | Should Be $dscConfig.AllNodes.CertificateStoreName
+
             #Test DefaultPage is correct
             $defultPages[0] | Should Match $dscConfig.AllNodes.DefaultPage
 
-            }
+            #Test LogCustomFields is correct
+            $result.logFile.customFields.Collection[0].LogFieldName | Should Be $dscConfig.AllNodes.LogFieldName1
+            $result.logFile.customFields.Collection[0].SourceName   | Should Be $dscConfig.AllNodes.SourceName1
+            $result.logFile.customFields.Collection[0].SourceType   | Should Be $dscConfig.AllNodes.SourceType1
+            $result.logFile.customFields.Collection[1].LogFieldName | Should Be $dscConfig.AllNodes.LogFieldName2
+            $result.logFile.customFields.Collection[1].SourceName   | Should Be $dscConfig.AllNodes.SourceName2
+            $result.logFile.customFields.Collection[1].SourceType   | Should Be $dscConfig.AllNodes.SourceType2
+        }
 
     }
 
@@ -178,16 +189,27 @@ try
             $result.bindings.Collection.BindingInformation[0]   | Should Match $dscConfig.AllNodes.HTTP1Hostname
             $result.bindings.Collection.BindingInformation[1]   | Should Match $dscConfig.AllNodes.HTTP2Hostname
             $result.bindings.Collection.BindingInformation[2]   | Should Match $dscConfig.AllNodes.HTTPSHostname
+            $result.bindings.Collection.BindingInformation[3]   | Should Match $dscConfig.AllNodes.HTTPSHostname
             $result.bindings.Collection.BindingInformation[0]   | Should Match $dscConfig.AllNodes.HTTPPort
             $result.bindings.Collection.BindingInformation[1]   | Should Match $dscConfig.AllNodes.HTTPPort
             $result.bindings.Collection.BindingInformation[2]   | Should Match $dscConfig.AllNodes.HTTPSPort
             $result.bindings.Collection.certificateHash[2]      | Should Be $selfSignedCert.Thumbprint
             $result.bindings.Collection.certificateStoreName[2] | Should Be $dscConfig.AllNodes.CertificateStoreName
+            $result.bindings.Collection.BindingInformation[3]   | Should Match $dscConfig.AllNodes.HTTPSPort2
+            $result.bindings.Collection.certificateHash[3]      | Should Be $selfSignedCert.Thumbprint
+            $result.bindings.Collection.certificateStoreName[3] | Should Be $dscConfig.AllNodes.CertificateStoreName
             
             #Test DefaultPage is correct
             $defultPages[0] | Should Match $dscConfig.AllNodes.DefaultPage
 
-            }
+            #Test LogCustomFields is correct
+            $result.logFile.customFields.Collection[0].LogFieldName | Should Be $dscConfig.AllNodes.LogFieldName1
+            $result.logFile.customFields.Collection[0].SourceName   | Should Be $dscConfig.AllNodes.SourceName1
+            $result.logFile.customFields.Collection[0].SourceType   | Should Be $dscConfig.AllNodes.SourceType1
+            $result.logFile.customFields.Collection[1].LogFieldName | Should Be $dscConfig.AllNodes.LogFieldName2
+            $result.logFile.customFields.Collection[1].SourceName   | Should Be $dscConfig.AllNodes.SourceName2
+            $result.logFile.customFields.Collection[1].SourceType   | Should Be $dscConfig.AllNodes.SourceType2
+        }
 
     }
 

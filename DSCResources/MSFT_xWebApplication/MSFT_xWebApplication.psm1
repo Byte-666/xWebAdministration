@@ -266,9 +266,9 @@ function Set-TargetResource
             {
                 Write-Verbose -Message ($LocalizedData.VerboseSetTargetEnabledProtocols -f $Name)
                 # Make input bindings which are an array, into a string
-                $stringafiedEnabledProtocols = $EnabledProtocols -join ' '
+                $stringafiedEnabledProtocols = $EnabledProtocols -join ','
                 Set-ItemProperty -Path "IIS:\Sites\$Website\$Name" `
-                                 -Name EnabledProtocols `
+                                 -Name 'enabledProtocols' `
                                  -Value $stringafiedEnabledProtocols `
                                  -ErrorAction Stop
             }
@@ -580,14 +580,15 @@ function Get-AuthenticationInfo
     $authenticationProperties = @{}
     foreach ($type in @('Anonymous', 'Basic', 'Digest', 'Windows'))
     {
-        $authenticationProperties[$type] = [String](Test-AuthenticationEnabled -Site $Site `
+        $authenticationProperties[$type] = [Boolean](Test-AuthenticationEnabled -Site $Site `
                                                                                -Name $Name `
                                                                                -Type $type)
     }
 
     return New-CimInstance `
             -ClassName MSFT_xWebApplicationAuthenticationInformation `
-            -ClientOnly -Property $authenticationProperties
+            -ClientOnly -Property $authenticationProperties `
+            -NameSpace 'root\microsoft\windows\desiredstateconfiguration'
             
 }
 
@@ -599,7 +600,8 @@ function Get-DefaultAuthenticationInfo
 {
     New-CimInstance -ClassName MSFT_xWebApplicationAuthenticationInformation `
         -ClientOnly `
-        -Property @{Anonymous=$false;Basic=$false;Digest=$false;Windows=$false}
+        -Property @{Anonymous=$false;Basic=$false;Digest=$false;Windows=$false} `
+        -NameSpace 'root\microsoft\windows\desiredstateconfiguration'
 }
 
 <#
@@ -625,9 +627,9 @@ function Get-SslFlags
                  ForEach-Object { $_.sslFlags }
 
     if ($null -eq $SslFlags) 
-        { 
-            [String]::Empty
-        } 
+    {
+        return [String]::Empty
+    }
 
     return $SslFlags
 }

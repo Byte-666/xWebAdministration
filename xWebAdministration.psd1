@@ -1,6 +1,6 @@
 @{
 # Version number of this module.
-ModuleVersion = '1.18.0.0'
+moduleVersion = '2.2.0.0'
 
 # ID used to uniquely identify this module
 GUID = 'b3239f27-d7d3-4ae6-a5d2-d9a1c97d6ae4'
@@ -41,10 +41,13 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '* Added sample for **xWebVirtualDirectory** for creating a new virtual directory. Bugfix for 195.
-* Added integration tests for **xWebVirtualDirectory**. Fixes 188.
-* xWebsite:
-  * Fixed bugs when setting log properties, fixes 299.
+        ReleaseNotes = '* Added new parameter "Location" to **WebApplcationHandler** extending functionality to address [392]
+* Changes to xWebAdministration
+  * Update section header for WebApplicationHandler in README.
+  * Fix tests for helper function `Get-LocalizedData` in Helper.Tests.ps1
+    that referenced the wrong path.
+* Remove duplication in MSFT_xWebsite.psm1. [Krzysztof Morcinek (@kmorcinek)](https://github.com/kmorcinek)
+* Updates **xIISMimeTypeMapping** to add MIME type mapping for nested paths
 
 '
 
@@ -58,6 +61,11 @@ FunctionsToExport = '*'
 # Cmdlets to export from this module
 CmdletsToExport = '*'
 }
+
+
+
+
+
 
 
 

@@ -12,8 +12,6 @@ if ( (-not (Test-Path -Path (Join-Path -Path $script:moduleRoot -ChildPath 'DSCR
 
 Import-Module (Join-Path -Path $script:moduleRoot -ChildPath 'DSCResource.Tests\TestHelper.psm1') -Force
 
-Import-Module (Join-Path -Path $script:moduleRoot -ChildPath 'Tests\MockWebAdministrationWindowsFeature.psm1')
-
 $TestEnvironment = Initialize-TestEnvironment `
     -DSCModuleName $script:DSCModuleName `
     -DSCResourceName $script:DSCResourceName `
@@ -25,7 +23,15 @@ try
 {
     #region Pester Tests
     InModuleScope -ModuleName $script:DSCResourceName -ScriptBlock {
-        
+        $script:DSCResourceName = 'MSFT_xWebsite'
+
+        # Make sure we don't have the original module in memory.
+        Remove-Module -Name 'WebAdministration' -ErrorAction SilentlyContinue
+
+        # Load the stubs
+        $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        Import-Module (Join-Path -Path $script:moduleRoot -ChildPath 'Tests\MockWebAdministrationWindowsFeature.psm1') -Force
+
         Describe "$script:DSCResourceName\Assert-Module" {
             Context 'WebAdminstration module is not installed' {
                 Mock -ModuleName Helper -CommandName Get-Module -MockWith { return $null }
@@ -80,6 +86,19 @@ try
                     -ClientOnly
             )
 
+            $mockLogCustomFields = @(
+                @{
+                    LogFieldName = 'LogField1'
+                    SourceName   = 'Accept-Encoding'
+                    SourceType   = 'RequestHeader'
+                }
+                @{
+                    LogFieldName = 'LogField2'
+                    SourceName   = 'Warning'
+                    SourceType   = 'ResponseHeader'
+                }
+            )
+
             $MockLogOutput = @{
                 directory         = '%SystemDrive%\inetpub\logs\LogFiles'
                 logExtFileFlags   = 'Date','Time','ClientIP','UserName','ServerIP','Method','UriStem','UriQuery','HttpStatus','Win32Status','TimeTaken','ServerPort','UserAgent','Referer','HttpSubStatus'
@@ -87,6 +106,7 @@ try
                 period            = 'Daily'
                 truncateSize      = '1048576'
                 localTimeRollover = 'False'
+                customFields      = @{Collection = $mockLogCustomFields}
             }
 
             $MockWebsite = @{
@@ -257,6 +277,15 @@ try
                 It 'should return LogFormat' {
                     $Result.logFormat | Should Be $MockWebsite.Logfile.logFormat
                 }
+
+                It 'should return LogCustomFields' {
+                    $Result.LogCustomFields[0].LogFieldName | Should Be $mockLogCustomFields[0].LogFieldName
+                    $Result.LogCustomFields[0].SourceName   | Should Be $mockLogCustomFields[0].SourceName
+                    $Result.LogCustomFields[0].SourceType   | Should Be $mockLogCustomFields[0].SourceType
+                    $Result.LogCustomFields[1].LogFieldName | Should Be $mockLogCustomFields[1].LogFieldName
+                    $Result.LogCustomFields[1].SourceName   | Should Be $mockLogCustomFields[1].SourceName
+                    $Result.LogCustomFields[1].SourceType   | Should Be $mockLogCustomFields[1].SourceType
+                }
             }
         }
 
@@ -273,6 +302,27 @@ try
                     CertificateStoreName  = 'WebHosting'
                     SslFlags              = 1
                 } -ClientOnly
+            )
+
+            $MockCimLogCustomFields = @(
+                (New-CimInstance -ClassName MSFT_xLogCustomFieldInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        LogFieldName = 'LogField1'
+                        SourceName   = 'Accept-Encoding'
+                        SourceType   = 'RequestHeader'
+                    } `
+                    -ClientOnly
+                ),
+                (New-CimInstance -ClassName MSFT_xLogCustomFieldInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        LogFieldName = 'LogField2'
+                        SourceName   = 'Warning'
+                        SourceType   = 'ResponseHeader'
+                    } `
+                    -ClientOnly
+                )
             )
 
             $MockParameters = @{
@@ -293,6 +343,7 @@ try
                 LogPeriod                = 'Hourly'
                 LogTruncateSize          = '2000000'
                 LoglocalTimeRollover     = $True
+                LogCustomFields          = $MockCimLogCustomFields
             }
 
             $MockWebBinding = @(
@@ -313,6 +364,19 @@ try
                 }
             )
 
+            $mockLogCustomFields = @(
+                @{
+                    LogFieldName = 'LogField1'
+                    SourceName   = 'Accept-Encoding'
+                    SourceType   = 'RequestHeader'
+                }
+                @{
+                    LogFieldName = 'LogField2'
+                    SourceName   = 'Warning'
+                    SourceType   = 'ResponseHeader'
+                }
+            )
+
             $MockLogOutput = @{
                 directory         = '%SystemDrive%\inetpub\logs\LogFiles'
                 logExtFileFlags   = 'Date','Time','ClientIP','UserName','ServerIP','Method','UriStem','UriQuery','HttpStatus','Win32Status','TimeTaken','ServerPort','UserAgent','Referer','HttpSubStatus'
@@ -320,6 +384,7 @@ try
                 period            = 'Daily'
                 truncateSize      = '1048576'
                 localTimeRollover = 'False'
+                customFields      = @{Collection = $mockLogCustomFields}
             }
 
             $MockWebsite = @{
@@ -570,7 +635,7 @@ try
                     $result | Should be $false
                 }
             }
-            
+
             Context 'Check LogPeriod is equal' {
                 $MockLogOutput.period = $MockParameters.LogPeriod
 
@@ -736,6 +801,47 @@ try
                     $result | Should be $false
                 }
             }
+
+            Context 'Check LogCustomFields is equal' {
+                Mock -CommandName Get-Website -MockWith {return $MockWebsite}
+
+                Mock -CommandName Get-WebConfigurationProperty `
+                    -MockWith { return $mockLogCustomFields[0] } `
+                    -ParameterFilter { $Filter -match $MockParameters.LogCustomFields[0].LogFieldName }
+
+                Mock -CommandName Get-WebConfigurationProperty `
+                -MockWith { return $mockLogCustomFields[1] } `
+                -ParameterFilter { $Filter -match $MockParameters.LogCustomFields[1].LogFieldName }
+
+                $Result = Test-TargetResource -Ensure $MockParameters.Ensure `
+                    -Name $MockParameters.Name `
+                    -LogCustomFields $MockParameters.LogCustomFields
+
+                It 'Should return true' {
+                    $result | Should be $true
+                }
+            }
+
+            Context 'Check LogCustomFields is different' {
+                Mock -CommandName Get-Website -MockWith {return $MockWebsite}
+
+                $MockDifferentLogCustomFields = @{
+                    LogFieldName = 'DifferentField'
+                    SourceName   = 'Accept-Encoding'
+                    SourceType   = 'DifferentSourceType'
+                }
+
+                Mock -CommandName Get-WebConfigurationProperty `
+                    -MockWith {return $MockDifferentLogCustomFields }
+
+                $Result = Test-TargetResource -Ensure $MockParameters.Ensure `
+                    -Name $MockParameters.Name `
+                    -LogCustomFields $MockParameters.LogCustomFields
+
+                It 'Should return false' {
+                    $result | Should be $false
+                }
+            }
         }
 
         Describe "how $script:DSCResourceName\Set-TargetResource responds to Ensure = 'Present'" {
@@ -758,6 +864,17 @@ try
                     } -ClientOnly
             )
 
+            $MockCimLogCustomFields = @(
+                New-CimInstance -ClassName MSFT_xLogCustomFieldInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        LogFieldName = 'ClientEncoding'
+                        SourceName   = 'Accept-Encoding'
+                        SourceType   = 'RequestHeader'
+                    } `
+                    -ClientOnly
+            )
+
             $MockParameters = @{
                 Ensure                   = 'Present'
                 Name                     = 'MockName'
@@ -778,6 +895,7 @@ try
                 LogTruncateSize          = '2000000'
                 LoglocalTimeRollover     = $True
                 LogFormat                = 'W3C'
+                LogCustomFields          = $MockCimLogCustomFields
             }
 
             $MockWebBinding = @(
@@ -798,6 +916,19 @@ try
                 }
             )
 
+            $mockLogCustomFields = @(
+                @{
+                    LogFieldName = 'LogField1'
+                    SourceName   = 'Accept-Encoding'
+                    SourceType   = 'RequestHeader'
+                }
+                @{
+                    LogFieldName = 'LogField2'
+                    SourceName   = 'Warning'
+                    SourceType   = 'ResponseHeader'
+                }
+            )
+
             $MockLogOutput =
                 @{
                     directory         = '%SystemDrive%\inetpub\logs\LogFiles'
@@ -806,6 +937,7 @@ try
                     period            = 'Daily'
                     truncateSize      = '1048576'
                     localTimeRollover = 'False'
+                    customFields      = @{Collection = $mockLogCustomFields}
                 }
 
             $MockWebsite = @{
@@ -839,7 +971,7 @@ try
                 Mock -CommandName Start-Website
 
                 Mock -CommandName Get-Item -MockWith { return $MockWebsiteGetItem }
-                
+
                 Mock -CommandName Set-Item
 
                 Mock -CommandName Set-ItemProperty
@@ -864,6 +996,10 @@ try
                 Mock -CommandName Test-AuthenticationEnabled { return $false } `
                     -ParameterFilter { ($Type -eq 'Windows') }
 
+                Mock -CommandName Set-WebConfigurationProperty
+
+                Mock -CommandName Test-LogCustomField -MockWith { return $false }
+
                 Set-TargetResource @MockParameters
 
                 It 'Should call all the mocks' {
@@ -879,61 +1015,78 @@ try
                     Assert-MockCalled -CommandName Set-Item -Exactly 3
                     Assert-MockCalled -CommandName Set-ItemProperty -Exactly 9
                     Assert-MockCalled -CommandName Start-Website -Exactly 1
+                    Assert-MockCalled -CommandName Set-WebConfigurationProperty -Exactly 2
+                    Assert-MockCalled -CommandName Test-LogCustomField -Exactly 1
                 }
             }
 
-            
             Context 'Create website with empty physical path' {
-                
+
                 Mock -CommandName Confirm-UniqueBinding -MockWith { return $true }
-                
-                Mock -CommandName Get-Website 
-                
-                Mock -CommandName New-Website -MockWith { return $MockWebsite } 
+
+                Mock -CommandName Get-Website
+
+                Mock -CommandName Get-Command -MockWith {
+                    return Get-Command -Name New-WebSite
+                } -ParameterFilter {
+                    $Module -eq 'WebAdministration'
+                }
+
+                Mock -CommandName New-Website -MockWith { return $MockWebsite }
 
                 Mock -CommandName Start-Website
 
+                Mock -CommandName Stop-Website
+
                 Mock -CommandName Get-Item -MockWith { return $MockWebsiteGetItem }
-                
+
                 Mock -CommandName Set-Item
 
                 Mock -CommandName Set-ItemProperty
-                                
+
                 Mock -CommandName Update-WebsiteBinding
-                
+
                 $MockParameters = $MockParameters.Clone()
-                $MockParameters.PhysicalPath = ''              
+                $MockParameters.PhysicalPath = ''
 
                 It 'Should create and start the web site' {
-                    Set-TargetResource @MockParameters                    
+                    Set-TargetResource @MockParameters
                     Assert-MockCalled -CommandName New-Website -ParameterFilter { $Force -eq $True } -Exactly 1
                     Assert-MockCalled -CommandName Start-Website -Exactly 1
                 }
             }
 
             Context 'Create website with null physical path' {
-                
+
                 Mock -CommandName Confirm-UniqueBinding -MockWith { return $true }
-                
-                Mock -CommandName Get-Website 
-                
-                Mock -CommandName New-Website -MockWith { return $MockWebsite } 
+
+                Mock -CommandName Get-Website
+
+                Mock -CommandName Get-Command -MockWith {
+                    return Get-Command -Name New-WebSite
+                } -ParameterFilter {
+                    $Module -eq 'WebAdministration'
+                }
+
+                Mock -CommandName New-Website -MockWith { return $MockWebsite }
 
                 Mock -CommandName Start-Website
 
+                Mock -CommandName Stop-Website
+
                 Mock -CommandName Get-Item -MockWith { return $MockWebsiteGetItem }
-                
+
                 Mock -CommandName Set-Item
 
                 Mock -CommandName Set-ItemProperty
-                                
+
                 Mock -CommandName Update-WebsiteBinding
-                
+
                 $MockParameters = $MockParameters.Clone()
-                $MockParameters.PhysicalPath = $null              
+                $MockParameters.PhysicalPath = $null
 
                 It 'Should create and start the web site' {
-                    Set-TargetResource @MockParameters                    
+                    Set-TargetResource @MockParameters
                     Assert-MockCalled -CommandName New-Website -ParameterFilter { $Force -eq $True } -Exactly 1
                     Assert-MockCalled -CommandName Start-Website -Exactly 1
                 }
@@ -1065,7 +1218,7 @@ try
                     }
                 }
 
-                Mock -CommandName New-Website -MockWith { return $MockWebsite } 
+                Mock -CommandName New-Website -MockWith { return $MockWebsite }
 
                 Mock -CommandName Stop-Website
 
@@ -1074,7 +1227,7 @@ try
                 Mock -CommandName Update-WebsiteBinding
 
                 Mock -CommandName Get-Item -MockWith { return $MockWebsiteGetItem }
-                
+
                 Mock -CommandName Set-Item
 
                 Mock -CommandName Set-ItemProperty
@@ -1161,7 +1314,7 @@ try
                 Mock -CommandName Update-WebsiteBinding
 
                 Mock -CommandName Get-Item -MockWith { return $MockWebsiteGetItem }
-                
+
                 Mock -CommandName Set-Item
 
                 Mock -CommandName Set-ItemProperty
@@ -1241,7 +1394,7 @@ try
                 Mock -CommandName Update-WebsiteBinding
 
                 Mock -CommandName Get-Item -MockWith { return $MockWebsiteGetItem }
-                
+
                 Mock -CommandName Set-Item
 
                 Mock -CommandName Set-ItemProperty
@@ -1922,7 +2075,7 @@ try
             }
         }
 
-        Describe "$script:DSCResourceName\ConvertTo-WebBinding" {
+        Describe "$script:DSCResourceName\ConvertTo-WebBinding" -Tag 'ConvertTo' {
             Context 'Expected behaviour' {
                 $MockBindingInfo = @(
                     New-CimInstance `
@@ -2101,7 +2254,90 @@ try
                     $ErrorRecord = New-Object `
                         -TypeName System.Management.Automation.ErrorRecord `
                         -ArgumentList $Exception, $ErrorId, $ErrorCategory, $null
+                    { ConvertTo-WebBinding -InputObject $MockBindingInfo } | Should Throw $ErrorRecord
+                }
+            }
 
+            Context 'Protocol is HTTPS and CertificateSubject is specified' {
+                $MockBindingInfo = @(
+                    New-CimInstance -ClassName MSFT_xWebBindingInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        Protocol              = 'https'
+                        CertificateSubject    = 'TestCertificate'
+                    } -ClientOnly
+                )
+
+                Mock Find-Certificate -MockWith {
+                    return [PSCustomObject]@{
+                        Thumbprint = 'C65CE51E20C523DEDCE979B9922A0294602D9D5C'
+                    }
+                }
+
+                It 'should not throw an error' {
+                   { ConvertTo-WebBinding -InputObject $MockBindingInfo } | Should Not Throw
+                }
+                It 'should return the correct thumbprint' {
+                    $Result = ConvertTo-WebBinding -InputObject $MockBindingInfo
+                    $Result.certificateHash | Should Be 'C65CE51E20C523DEDCE979B9922A0294602D9D5C'
+                }
+                It 'Should call Find-Certificate mock' {
+                    Assert-MockCalled -CommandName Find-Certificate -Times 1
+                }
+            }
+
+            Context 'Protocol is HTTPS and full CN of CertificateSubject is specified' {
+                $MockBindingInfo = @(
+                    New-CimInstance -ClassName MSFT_xWebBindingInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        Protocol              = 'https'
+                        CertificateSubject    = 'CN=TestCertificate'
+                    } -ClientOnly
+                )
+
+                Mock Find-Certificate -MockWith {
+                    return [PSCustomObject]@{
+                        Thumbprint = 'C65CE51E20C523DEDCE979B9922A0294602D9D5C'
+                    }
+                }
+
+                It 'should not throw an error' {
+                   { ConvertTo-WebBinding -InputObject $MockBindingInfo } | Should Not Throw
+                }
+                It 'should return the correct thumbprint' {
+                    $Result = ConvertTo-WebBinding -InputObject $MockBindingInfo
+                    $Result.certificateHash | Should Be 'C65CE51E20C523DEDCE979B9922A0294602D9D5C'
+                }
+                It 'Should call Find-Certificate mock' {
+                    Assert-MockCalled -CommandName Find-Certificate -Times 1
+                }
+            }
+
+            Context 'Protocol is HTTPS and invalid CertificateSubject is specified' {
+                $MockBindingInfo = @(
+                    New-CimInstance -ClassName MSFT_xWebBindingInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        Protocol              = 'https'
+                        CertificateSubject    = 'TestCertificate'
+                        CertificateStoreName  = 'MY'
+                    } -ClientOnly
+                )
+
+                Mock Find-Certificate
+
+                It 'should throw the correct error' {
+                    $CertificateSubject = "CN=$($MockBindingInfo.CertificateSubject)"
+                    $ErrorId = 'WebBindingInvalidCertificateSubject'
+                    $ErrorCategory = [System.Management.Automation.ErrorCategory]::InvalidArgument
+                    $ErrorMessage = $LocalizedData.ErrorWebBindingInvalidCertificateSubject -f $CertificateSubject, $MockBindingInfo.CertificateStoreName
+                    $Exception = New-Object `
+                        -TypeName System.InvalidOperationException `
+                        -ArgumentList $ErrorMessage
+                    $ErrorRecord = New-Object `
+                        -TypeName System.Management.Automation.ErrorRecord `
+                        -ArgumentList $Exception, $ErrorId, $ErrorCategory, $null
                     { ConvertTo-WebBinding -InputObject $MockBindingInfo } | Should Throw $ErrorRecord
                 }
             }
@@ -2270,7 +2506,7 @@ try
             Context 'AuthenticationInfo is false' {
                 $MockWebConfiguration = @(
                     @{
-                        Value = 'False'
+                        Value = $false
                     }
                 )
 
@@ -2278,10 +2514,10 @@ try
 
                 It 'should all be false' {
                     $result = Get-AuthenticationInfo -site $MockWebsite.Name
-                    $result.Anonymous | Should be False
-                    $result.Digest | Should be False
-                    $result.Basic | Should be False
-                    $result.Windows | Should be False
+                    $result.Anonymous | Should be $false
+                    $result.Digest | Should be $false
+                    $result.Basic | Should be $false
+                    $result.Windows | Should be $false
                 }
 
                 It 'should call Get-WebConfigurationProperty four times' {
@@ -3238,8 +3474,8 @@ try
 
                 Update-WebsiteBinding -Name $MockWebsite.Name -BindingInfo $MockBindingInfo
 
-                It 'should call all the mocks' {
-                    Assert-Verifiablemocks
+                It 'Should call all the mocks' {
+                    Assert-VerifiableMock
                     Assert-MockCalled -CommandName Add-WebConfiguration -Exactly $MockBindingInfo.Count
                     Assert-MockCalled -CommandName Set-WebConfigurationProperty
                 }
@@ -3338,6 +3574,131 @@ try
                     { Update-WebsiteBinding `
                         -Name $MockWebsite.Name `
                         -BindingInfo $MockBindingInfo } | Should Throw $ErrorRecord
+                }
+            }
+        }
+
+        Describe "$script:DSCResourceName\ConvertTo-CimLogCustomFields"{
+            $mockLogCustomFields = @(
+                @{
+                    LogFieldName = 'LogField1'
+                    SourceName   = 'Accept-Encoding'
+                    SourceType   = 'RequestHeader'
+                }
+                @{
+                    LogFieldName = 'LogField2'
+                    SourceName   = 'Warning'
+                    SourceType   = 'ResponseHeader'
+                }
+            )
+
+            Context 'Expected behavior'{
+                $Result = ConvertTo-CimLogCustomFields -InputObject $mockLogCustomFields
+
+                It 'should return the LogFieldName' {
+                    $Result[0].LogFieldName | Should Be $mockLogCustomFields[0].LogFieldName
+                    $Result[0].LogFieldName | Should Be $mockLogCustomFields[0].LogFieldName
+                }
+
+                It 'should return the SourceName' {
+                    $Result[0].SourceName | Should Be $mockLogCustomFields[0].SourceName
+                    $Result[0].SourceName | Should Be $mockLogCustomFields[0].SourceName
+                }
+
+                It 'should return the SourceType' {
+                    $Result[0].SourceType | Should Be $mockLogCustomFields[0].SourceType
+                    $Result[0].SourceType | Should Be $mockLogCustomFields[0].SourceType
+                }
+            }
+        }
+
+        Describe "$script:DSCResourceName\Test-LogCustomField"{
+            $MockWebsiteName = 'ContosoSite'
+
+            $MockCimLogCustomFields = @(
+                New-CimInstance -ClassName MSFT_xLogCustomFieldInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        LogFieldName = 'ClientEncoding'
+                        SourceName   = 'Accept-Encoding'
+                        SourceType   = 'RequestHeader'
+                    } `
+                    -ClientOnly
+            )
+
+            Context 'LogCustomField in desired state'{
+                $MockDesiredLogCustomFields = @{
+                    LogFieldName = 'ClientEncoding'
+                    SourceName   = 'Accept-Encoding'
+                    SourceType   = 'RequestHeader'
+                }
+
+                Mock -CommandName Get-WebConfigurationProperty -MockWith { return $MockDesiredLogCustomFields }
+
+               It 'should return True' {
+                    Test-LogCustomField -Site $MockWebsiteName -LogCustomField $MockCimLogCustomFields | Should Be $True
+                }
+            }
+
+            Context 'LogCustomField not in desired state'{
+                $MockWrongLogCustomFields = @{
+                    LogFieldName = 'ClientEncoding'
+                    SourceName   = 'WrongSourceName'
+                    SourceType   = 'WrongSourceType'
+                }
+
+                Mock -CommandName Get-WebConfigurationProperty -MockWith { return $MockWrongLogCustomFields }
+
+                It 'should return False' {
+                    Test-LogCustomField -Site $MockWebsiteName -LogCustomField $MockCimLogCustomFields | Should Be $False
+                }
+            }
+
+            Context 'LogCustomField not present'{
+                Mock -CommandName Get-WebConfigurationProperty -MockWith { return $false }
+
+                It 'should return False' {
+                    Test-LogCustomField -Site $MockWebsiteName -LogCustomField $MockCimLogCustomFields | Should Be $False
+                }
+            }
+
+        }
+
+        Describe "$script:DSCResourceName\Set-LogCustomField"{
+            $MockWebsiteName = 'ContosoSite'
+
+            $MockCimLogCustomFields = @(
+                New-CimInstance -ClassName MSFT_xLogCustomFieldInformation `
+                    -Namespace root/microsoft/Windows/DesiredStateConfiguration `
+                    -Property @{
+                        LogFieldName = 'ClientEncoding'
+                        SourceName   = 'Accept-Encoding'
+                        SourceType   = 'RequestHeader'
+                    } `
+                    -ClientOnly
+            )
+
+            Context 'Create new LogCustomField'{
+                Mock -CommandName Set-WebConfigurationProperty
+
+                It 'should not throw an error' {
+                    { Set-LogCustomField  -Site $MockWebsiteName -LogCustomField $MockCimLogCustomFields } | Should Not Throw
+                }
+
+                It 'should call should call expected mocks' {
+                    Assert-MockCalled -CommandName Set-WebConfigurationProperty -Exactly 2
+                }
+            }
+
+            Context 'Modify existing LogCustomField'{
+                Mock -CommandName Set-WebConfigurationProperty
+
+                It 'should not throw an error' {
+                    { Set-LogCustomField  -Site $MockWebsiteName -LogCustomField $MockCimLogCustomFields } | Should Not Throw
+                }
+
+                It 'should call should call expected mocks' {
+                    Assert-MockCalled -CommandName Set-WebConfigurationProperty -Exactly 2
                 }
             }
         }

@@ -24,9 +24,16 @@
             HTTP2Hostname               = 'http2.website'
             HTTPSProtocol               = 'https'
             HTTPSPort                   = '443'
+            HTTPSPort2                  = '8444'
             HTTPSHostname               = 'https.website'
             CertificateStoreName        = 'MY'
             SslFlags                    = '1'
+            LogFieldName1                = 'CustomField1'
+            SourceName1                  = 'Accept-Encoding'
+            SourceType1                  = 'RequestHeader'
+            LogFieldName2                = 'CustomField2'
+            SourceName2                  = 'Warning'
+            SourceType2                  = 'ResponseHeader'
         }
     )
 }

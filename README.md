@@ -1,11 +1,29 @@
 # xWebAdministration
 
-[![Build status](https://ci.appveyor.com/api/projects/status/gnsxkjxht31ctan1/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xwebadministration/branch/master)
-
-The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings** and **xWebConfigKeyValue** DSC resources for creating and configuring various IIS artifacts.
+The **xWebAdministration** module contains the **xIISModule**, **xIISLogging**, **xWebAppPool**, **xWebsite**, **xWebApplication**, **xWebVirtualDirectory**, **xSSLSettings**, **xWebConfigKeyValue**, **xWebConfigProperty**, **xWebConfigPropertyCollection** and **WebApplicationHandler** DSC resources for creating and configuring various IIS artifacts.
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Branches
+
+### master
+
+[![Build status](https://ci.appveyor.com/api/projects/status/gnsxkjxht31ctan1/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xWebAdministration/branch/master)
+[![codecov](https://codecov.io/gh/PowerShell/xWebAdministration/branch/master/graph/badge.svg)](https://codecov.io/gh/PowerShell/xWebAdministration/branch/master)
+
+This is the branch containing the latest release -
+no contributions should be made directly to this branch.
+
+### dev
+
+[![Build status](https://ci.appveyor.com/api/projects/status/gnsxkjxht31ctan1/branch/dev?svg=true)](https://ci.appveyor.com/project/PowerShell/xWebAdministration/branch/dev)
+[![codecov](https://codecov.io/gh/PowerShell/xWebAdministration/branch/dev/graph/badge.svg)](https://codecov.io/gh/PowerShell/xWebAdministration/branch/dev)
+
+This is the development branch
+to which contributions should be proposed by contributors as pull requests.
+This development branch will periodically be merged to the master branch,
+and be released to [PowerShell Gallery](https://www.powershellgallery.com/).
 
 ## Contributing
 
@@ -13,7 +31,9 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 
 ## Resources
 
-### xIisHandler
+### xIisHandler (DEPRECATED)
+
+> Please use WebApplicationHandler resource instead. xIISHandler will be removed in future release
 
 * **Name**: The name of the handler, for example **PageHandlerFactory-Integrated-4.0**
 * **Ensure**: Ensures that the handler is **Present** or **Absent**.
@@ -38,6 +58,10 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **LogTruncateSize**: How large the file should be before it is truncated. If this is set then LogPeriod will be ignored if passed in and set to MaxSize. The value must be a valid integer between `1048576 (1MB)` and `4294967295 (4GB)`.
 * **LoglocalTimeRollover**: Use the localtime for file naming and rollover. The acceptable values for this property are: `$true`, `$false`
 * **LogFormat**: Format of the Logfiles. **Note**Only W3C supports LogFlags. The acceptable values for this property are: `IIS`,`W3C`,`NCSA`
+* **LogCustomFields**: Custom logging field information the form of an array of embedded instances of the **MSFT_xLogCustomField** CIM class that implements the following properties:
+  * **LogFieldName**: Field name to identify the custom field within the log file. Please note that the field name cannot contain spaces.
+  * **SourceName**: You can select `RequestHeader`, `ResponseHeader`, or `ServerVariable` (note that enhanced logging cannot log a server variable with a name that contains lower-case characters - to include a server variable in the event log just make sure that its name consists of all upper-case characters).
+  * **SourceType**: Name of the HTTP header or server variable (depending on the Source Type you selected) that contains a value that you want to log.
 
 ### xWebAppPool
 
@@ -142,6 +166,7 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
   * **Port**: The port of the binding. The value must be a positive integer between `1` and `65535`. This property is only applicable for `http` (the default value is `80`) and `https` (the default value is `443`) bindings.
   * **HostName**: The host name of the binding. This property is only applicable for `http` and `https` bindings.
   * **CertificateThumbprint**: The thumbprint of the certificate. This property is only applicable for `https` bindings.
+  * **CertificateSubject**: The subject of the certificate if the thumbprint isn't known. This property is only applicable for `https` bindings.
   * **CertificateStoreName**: The name of the certificate store where the certificate is located. This property is only applicable for `https` bindings. The acceptable values for this property are: `My`, `WebHosting`. The default value is `My`.
   * **SslFlags**: The type of binding used for Secure Sockets Layer (SSL) certificates. This property is supported in IIS 8.0 or later, and is only applicable for `https` bindings. The acceptable values for this property are:
     * **0**: The default value. The secure connection be made using an IP/Port combination. Only one certificate can be bound to a combination of IP address and the port.
@@ -166,6 +191,10 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **LogTruncateSize**: How large the file should be before it is truncated. If this is set then LogPeriod will be ignored if passed in and set to MaxSize. The value must be a valid integer between `1048576 (1MB)` and `4294967295 (4GB)`.
 * **LoglocalTimeRollover**: Use the localtime for file naming and rollover. The acceptable values for this property are: `$true`, `$false`
 * **LogFormat**: Format of the Logfiles. **Note**Only W3C supports LogFlags. The acceptable values for this property are: `IIS`,`W3C`,`NCSA`
+* **LogCustomFields**: Custom logging field information the form of an array of embedded instances of the **MSFT_xLogCustomFieldInformation** CIM class that implements the following properties:
+  * **LogFieldName**: Field name to identify the custom field within the log file. Please note that the field name cannot contain spaces.
+  * **SourceName**: You can select `RequestHeader`, `ResponseHeader`, or `ServerVariable` (note that enhanced logging cannot log a server variable with a name that contains lower-case characters - to include a server variable in the event log just make sure that its name consists of all upper-case characters).
+  * **SourceType**: Name of the HTTP header or server variable (depending on the Source Type you selected) that contains a value that you want to log.
 
 ### xWebApplication
 
@@ -186,6 +215,25 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **SslFlags**: SslFlags for the application: The acceptable values for this property are: `''`, `Ssl`, `SslNegotiateCert`, `SslRequireCert`, `Ssl128`
 * **EnabledProtocols**: EnabledProtocols for the application. The acceptable values for this property are: `http`, `https`, `net.tcp`, `net.msmq`, `net.pipe`
 
+### WebApplicationHandler
+
+* **[String] Ensure** _(Write)_: Indicates if the application handler exists. Set this property to `Absent` to ensure that the application handler does not exist. Default value is 'Present'.
+{ *Present* | Absent }
+* **[String] Name** _(Key)_: Specifies the name of the new request handler.
+* **[String] Location** _(Write)_: Specifies The location of the configuration setting. Location tags are frequently used for configuration settings that must be set more precisely than per application or per virtual directory.
+* **[String] PhysicalHandlerPath** _(Write)_: Specifies the physical path to the handler. This parameter applies to native modules only.
+* **[String] Verb** _(Write)_: Specifies the HTTP verbs that are handled by the new handler.
+* **[String] Modules** _(Write)_: Specifies the modules used for the handler.
+* **[String[]] Path** _(Required)_: Specifies an IIS configuration path.
+* **[String] PreCondition** _(Write)_: Specifies preconditions for the new handler.
+* **[String] RequiredAccess** _(Write)_: Specifies the user rights that are required for the new handler. { None | Read | Write | Script | Execute }
+* **[String] ScriptProcessor** _(Write)_: Specifies the script processor that runs for the module.
+* **[String] Type** _(Write)_: Specifies the managed type of the new module. This parameter applies to managed modules only.
+* **[String] ResourceType** _(Write)_: Specifies the resource type this handler runs. See [ResourceType](https://docs.microsoft.com/en-us/iis/configuration/system.webserver/handlers/add).
+* **[Boolean] AllowPathInfo** _(Write)_: Specifies whether the handler processes full path information in a URI, such as contoso/marketing/imageGallery.aspx. If the value is true, the
+handler processes the full path, contoso/marketing/imageGallery. If the value is false, the handler processes only the last section of the path, /imageGallery.
+* **[UInt64] ResponseBufferLimit** _(Write)_: Specifies the maximum size, in bytes, of the response buffer for a request handler runs.
+
 ### xWebVirtualDirectory
 
 * **Website**: Name of website with which virtual directory is associated
@@ -194,7 +242,10 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **Name**: The name of the virtual directory
 * **Ensure**: Ensures if the virtual directory is **Present** or **Absent**.
 
-### xWebConfigKeyValue
+### xWebConfigKeyValue (DEPRECATED)
+
+>NOTE: The **xWebConfigKeyValue** resource is deprecated and has been replaced by the **xWebConfigProperty** and **xWebConfigPropertyCollection** resources.
+>It may be removed in a future release.
 
 * **WebsitePath**: Path to website location (IIS or WebAdministration format).
 * **ConfigSection**: Section to update (only AppSettings supported as of now).
@@ -202,6 +253,30 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **Value**: Value for AppSettings.
 * **Ensure**: Ensures if the appSetting is **Present** or **Absent**.
 * **IsAttribute**: If the given key value pair is for attribute, default is element.
+
+### xWebConfigProperty
+
+Ensures the value of an identified property in the web.config file.
+
+* **WebsitePath**: Path to website location (IIS or WebAdministration format).
+* **Filter**: Filter used to locate property to update.
+* **PropertyName**: Name of the property to update.
+* **Value**: Value of the property to update.
+* **Ensure**: Indicates if the property and value should be present or absent. Defaults to 'Present'. { *Present* | Absent }
+
+### xWebConfigPropertyCollection
+
+Ensures the value of an identified property collection item's property in the web.config file. Builds upon the **xWebConfigKeyValue** resource to support all web.config elements that contain collections of child items.
+
+* **WebsitePath**: Path to website location (IIS or WebAdministration format).
+* **Filter**: Filter used to locate property collection to update.
+* **CollectionName**: Name of the property collection to update.
+* **ItemName**: Name of the property collection item to update.
+* **ItemKeyName**: Name of the key of the property collection item to update.
+* **ItemKeyValue**: Value of the key of the property collection item to update.
+* **ItemPropertyName**: Name of the property of the property collection item to update.
+* **ItemPropertyValue**: Value of the property of the property collection item to update.
+* **Ensure**: Indicates if the property and value should be present or absent. Defaults to 'Present'. { *Present* | Absent }
 
 ### xSSLSettings
 
@@ -211,8 +286,11 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 
 ### xIisFeatureDelegation
 
-* **SectionName**: Relative path of the section to delegate such as **security/authentication**
+This resource manages the IIS configuration section locking (overrideMode) to control what configuration can be set in web.config.
+
+* **Filter**: Specifies the IIS configuration section to lock or unlock in this format: **/system.webserver/security/authentication/anonymousAuthentication**
 * **OverrideMode**: Mode of that section { **Allow** | **Deny** }
+* **Path**: Specifies the configuration path. This can be either an IIS configuration path in the format computer machine/webroot/apphost, or the IIS module path in this format IIS:\sites\Default Web Site. *WARNING: both path types can be used to manage the same feature delegation, however, there is no way to control if two resources in the configuration set the same feature delegation*.
 
 ### xIisMimeTypeMapping
 
@@ -238,6 +316,61 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 ## Versions
 
 ### Unreleased
+
+* Update appveyor.yml to use the default template.
+* Added default template file .gitattributes, and added default settings for
+  Visual Studio Code.
+* Line endings was fixed in files that was committed with wrong line ending.
+
+### 2.2.0.0
+
+* Added new parameter 'Location' to **WebApplcationHandler** extending functionality to address [392]
+* Changes to xWebAdministration
+  * Update section header for WebApplicationHandler in README.
+  * Fix tests for helper function `Get-LocalizedData` in Helper.Tests.ps1
+    that referenced the wrong path.
+* Remove duplication in MSFT_xWebsite.psm1. [Krzysztof Morcinek (@kmorcinek)](https://github.com/kmorcinek)
+* Updates **xIISMimeTypeMapping** to add MIME type mapping for nested paths
+
+### 2.1.0.0
+
+* Added new resources **xWebConfigProperty** and **xWebConfigPropertyCollection** extending functionality provided by **xWebConfigKeyValue**, addresses #249.
+* Fixed Get-DscConfiguration throw in xWebSite; addresses [#372](https://github.com/PowerShell/xWebAdministration/issues/372). [Reggie Gibson (@regedit32)](https://github.com/regedit32)
+* Added **WebApplicationHandler** resource for creating and modifying IIS Web Handlers. Fixes #337
+* Added **WebApplicationHandler** integration tests
+* Added **WebApplicationHandler** unit tests
+* Deprecated xIISHandler resource. This resource will be removed in future release
+
+### 2.0.0.0
+* Changes to xWebAdministration
+  * Moved file Codecov.yml that was added to the wrong path in previous release.
+* Updated **xWebSite** to include ability to manage custom logging fields.
+  [Reggie Gibson (@regedit32)](https://github.com/regedit32)
+* Updated **xIISLogging** to include ability to manage custom logging fields
+  ([issue #267](https://github.com/PowerShell/xWebAdministration/issues/267)).
+  [@ldillonel](https://github.com/ldillonel)
+* BREAKING CHANGE: Updated **xIisFeatureDelegation** to be able to manage any
+  configuration section.
+  [Reggie Gibson (@regedit32)](https://github.com/regedit32)
+
+
+### 1.20.0.0
+
+* Fix Get-DscConfiguration failure with xWebApplication and xWebSite resources
+  (issue #302 and issue #314).
+* Add Codecov support.
+* Added .vscode\settings.json so that code can be easily formatted in VSCode
+  closer according to the style guideline.
+* Updated README.md with a branches section, and added Codecov badges.
+* Fix unit test for helper function `Find-Certificate` that could not find the test
+  helper function `Install-NewSelfSignedCertificateExScript`.
+* Fix unit tests for xWebSite that failed because `Get-Command` and 'Stop-WebStie`
+  wasn't properly mocked.
+
+### 1.19.0.0
+
+* **xWebAppPoolDefaults** now returns values. Fixes #311.
+* Added unit tests for **xWebAppPoolDefaults**. Fixes #183.
 
 ### 1.18.0.0
 
@@ -713,6 +846,91 @@ Configuration Sample_xWebsite_NewWebsite
 }
 ```
 
+When specifying a HTTPS web binding you can also specify a certifcate subject, for cases where the certificate
+is being generated by the same configuration using something like xCertReq.
+
+```powershell
+Configuration Sample_xWebsite_NewWebsite
+{
+    param
+    (
+        # Target nodes to apply the configuration
+        [string[]]$NodeName = 'localhost',
+        # Name of the website to create
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]$WebSiteName,
+        # Source Path for Website content
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]$SourcePath,
+        # Destination path for Website content
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]$DestinationPath
+    )
+
+    # Import the module that defines custom resources
+    Import-DscResource -Module xWebAdministration
+    Node $NodeName
+    {
+        # Install the IIS role
+        WindowsFeature IIS
+        {
+            Ensure          = "Present"
+            Name            = "Web-Server"
+        }
+
+        # Install the ASP .NET 4.5 role
+        WindowsFeature AspNet45
+        {
+            Ensure          = "Present"
+            Name            = "Web-Asp-Net45"
+        }
+
+        # Stop the default website
+        xWebsite DefaultSite
+        {
+            Ensure          = "Present"
+            Name            = "Default Web Site"
+            State           = "Stopped"
+            PhysicalPath    = "C:\inetpub\wwwroot"
+            DependsOn       = "[WindowsFeature]IIS"
+        }
+
+        # Copy the website content
+        File WebContent
+        {
+            Ensure          = "Present"
+            SourcePath      = $SourcePath
+            DestinationPath = $DestinationPath
+            Recurse         = $true
+            Type            = "Directory"
+            DependsOn       = "[WindowsFeature]AspNet45"
+        }
+
+        # Create the new Website with HTTPS
+        xWebsite NewWebsite
+        {
+            Ensure          = "Present"
+            Name            = $WebSiteName
+            State           = "Started"
+            PhysicalPath    = $DestinationPath
+            BindingInfo     = @(
+                MSFT_xWebBindingInformation
+                {
+                    Protocol              = "HTTPS"
+                    Port                  = 8444
+                    CertificateSubject    = "CN=CertificateSubject"
+                    CertificateStoreName  = "MY"
+                }
+            )
+            DependsOn       = "[File]WebContent"
+        }
+    }
+}
+```
+
 ### Creating the default website using configuration data
 
 In this example, we’ve moved the parameters used to generate the website into a configuration data file.
@@ -909,6 +1127,25 @@ configuration Sample_EndToEndxWebAdministration
             IsAttribute = $false
             WebsitePath = "IIS:\sites\" + $Node.WebsiteName
             DependsOn = @("[File]CreateWebConfig")
+        }
+
+        #Add a webApplicationHandler
+        WebApplicationHandler WebHandlerTest
+        {
+            PSPath               = $Node.PSPath
+            Name                 = 'ATest-WebHandler'
+            Path                 = '*'
+            Verb                 = '*'
+            Modules              = 'IsapiModule'
+            RequireAccess        = 'None'
+            ScriptProcessor      = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\aspnet_isapi.dll"
+            ResourceType         = 'Unspecified'
+            AllowPathInfo        = $false
+            ResponseBufferLimit  = 0
+            PhysicalPath         = $Node.PhysicalPathWebApplication
+            Type                 = $null
+            PreCondition         = $null
+            Location             = 'Default Web Site/TestDir
         }
     }
 }
